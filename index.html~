@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+  <head>
+   <body>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <style type="text/css">
+      html { height: 100% }
+      body { height: 100%; margin: 0; padding: 0 }
+      #map-canvas { height: 100% }
+</style>
+    <script type="text/javascript"
+      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC0kHsbYIUeAQMbsTqhfBcKWHtMZWZy7yc&sensor=false">
+    </script>
+     <script src="/socket.io/socket.io.js"></script>
+    <script src="./jquery-latest.js"></script>
+    <script src="./mousetrap.min.js"></script>
+    <script type="text/javascript">
+	var Lat=18.529176;
+	var Long=73.852764,i=0;
+	var LatLang; 
+	var line;  
+	function timedRefresh(timeoutPeriod) {
+	setTimeout("location.reload(true);",timeoutPeriod);
+	}
+
+	$(document).ready(function(){
+		var counter=0,Latstr='',Longstr='';
+		var arrayLat,arrayLong;
+		var newLatLng ;
+		//connect to the server
+		var serverIP = 'http://localhost';
+		var socket = io.connect(serverIP);
+		//on connected
+		
+
+		function initialize() {
+
+			var LatLang= new google.maps.LatLng(Lat,Long);
+			var Prev;
+			
+			
+		socket.on('connected', function(data) {    
+		  console.log('Connected, this is what I received : ', data);
+		}); 
+
+		 socket.on('coordinates', function (data){   
+			Latstr='',Longstr='';
+		  	//console.log("data received = "+data);
+			for(counter=0;counter<=8;counter++){
+				Latstr+=data.charAt(counter);
+			}
+			for(counter=9;counter<=18;counter++){
+				Longstr+=data.charAt(counter);
+			}
+
+
+
+			// Adding offset
+			Lat=parseFloat(Latstr) ; //+ 0.214;
+			Long=parseFloat(Longstr); //+ 0.331;
+
+			Latstr = Lat.toString();
+			Longstr = Long.toString();
+			Prev= new google.maps.LatLng(Latstr,Longstr);
+	
+			console.log("Lattitude",Latstr);
+			console.log("Longitude",Longstr);
+
+			var marker1= new google.maps.Marker({position:LatLang,map: map,title: 'Route'}); 
+			iconFile = 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png';
+			marker1.setIcon(iconFile); 
+			marker1.setPosition(new google.maps.LatLng(Latstr,Longstr));
+			
+			
+			
+			setInterval(function() {
+			    newLatLng = new google.maps.LatLng(Latstr,Longstr)
+			    marker.setPosition(newLatLng);
+			    marker.setIcon('gps30.png')
+			}, 1000); 
+			
+			var Path = [Prev, newLatLng];
+			line = new google.maps.Polyline({
+				path: Path,
+				strokeColor: 'green',
+				strokeOpacity: 0.5,
+				strokeWeight: 10
+			}); 			
+			 line.setMap(map)
+			 
+			
+			Prev = newLatLng;
+
+		  //$("#serialDisplay").val($("#serialDisplay").val()+data+"\n");
+		});
+
+		//console.log("Lattitude",Lat);
+		//console.log("Longitude",Long);
+		var mapOptions = {
+		  center:LatLang,
+		  zoom: 16,
+		  mapTypeId: google.maps.MapTypeId.ROADMAP
+		};
+		var map = new google.maps.Map(document.getElementById("map-canvas"),mapOptions);
+		var polyOptions = {
+		    strokeColor: '#000000',
+		    strokeOpacity: 1.0,
+		    strokeWeight: 3
+		}
+		  poly = new google.maps.Polyline(polyOptions);
+		  poly.setMap(map);
+
+		var marker = new google.maps.Marker({position:LatLang,map: map,title: 'Current Location'
+	  	}); 
+	
+
+      }
+      google.maps.event.addDomListener(window, 'load', initialize);
+	
+	
+	//timedRefresh(5000);
+});
+	
+	
+	
+    </script>
+  </head>
+     <div id="map-canvas"></div>     
+  </body>
+</html>
+
